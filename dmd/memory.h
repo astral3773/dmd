@@ -3,8 +3,20 @@
 
 #include <string>
 #include "../includes/vmmdll.h"
+#include <optional>
 
 namespace dmd {
+
+	constexpr std::size_t operator"" KB(unsigned long long v) {
+		return v * 1024ull;
+	}
+	constexpr std::size_t operator"" MB(unsigned long long v) {
+		return v * 1024ull * 1024ull;
+	}
+	constexpr std::size_t operator"" GB(unsigned long long v) {
+		return v * 1024ull * 1024ull * 1024ull;
+	}
+
 
 	class Range {
 	public:
@@ -25,13 +37,14 @@ namespace dmd {
 		}
 
 		bool Contains(uint64_t address) const {
-			return Begin() <= address && End() > address;
+			return Begin() <= address && End() >= address;
 		}
-	private:
 
+	private:
 		uint64_t begin_ = 0;
 		uint64_t end_ = 0;
 	};
+
 	class Memory {
 	public:
 		bool Setup();
@@ -44,6 +57,16 @@ namespace dmd {
 			return buffer;
 		}
 
+		template<typename T, typename TAddr>
+		bool Read(TAddr address, T* buffer, size_t size = 0) {
+			return ReadMemory((void*)address, buffer, size == 0 ? sizeof(T) : size);
+		}
+
+		std::optional<Range> GetImage(const std::string& image_name);
+
+		DWORD ProcessId() const {
+			return process_id_;
+		}
 	private:
 
 		bool ReadMemory(void* src, void* dst, size_t size);
